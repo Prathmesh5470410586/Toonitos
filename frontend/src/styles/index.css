@@ -1,0 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* fallback if Tailwind not set up: basic styles */
+html,body,#root { height: 100%; margin: 0; font-family: Inter, system-ui, Arial; }
