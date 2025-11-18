@@ -1,11 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import Home from './pages/Home';
 import SignIn from './pages/SignIn';
 import Register from './pages/Register';
 import Browse from './pages/Browse';
 import API from './api';
-import { useState, useEffect } from 'react';
 
 function Header() {
   const [user, setUser] = useState(() => {
@@ -19,21 +18,43 @@ function Header() {
 
   const navigate = useNavigate();
 
+  // ------------------ LISTEN FOR USER UPDATES ------------------
   useEffect(() => {
     function onStorage(e) {
       if (e.key === 'user') {
         setUser(e.newValue ? JSON.parse(e.newValue) : null);
       }
     }
+
+    function onUserUpdated(e) {
+      const updatedUser = e.detail;
+      if (updatedUser) {
+        setUser(updatedUser);
+      } else {
+        setUser(null);
+      }
+    }
+
     window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    window.addEventListener('userUpdated', onUserUpdated);
+
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('userUpdated', onUserUpdated);
+    };
   }, []);
 
+  // ------------------ UPGRADE ------------------
   async function handleUpgrade() {
     try {
       const res = await API.post('/user/subscribe');
-      const updated = { ...(user || {}), subscription: res.data.subscription };
+
+      const latestUser = JSON.parse(localStorage.getItem('user')) || {};
+      const updated = { ...latestUser, subscription: res.data.subscription };
+
       localStorage.setItem('user', JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('userUpdated', { detail: updated }));
+
       setUser(updated);
     } catch (err) {
       console.error('subscribe err', err);
@@ -41,11 +62,17 @@ function Header() {
     }
   }
 
+  // ------------------ CANCEL ------------------
   async function handleCancel() {
     try {
       const res = await API.post('/user/cancel');
-      const updated = { ...(user || {}), subscription: res.data.subscription };
+
+      const latestUser = JSON.parse(localStorage.getItem('user')) || {};
+      const updated = { ...latestUser, subscription: res.data.subscription };
+
       localStorage.setItem('user', JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('userUpdated', { detail: updated }));
+
       setUser(updated);
     } catch (err) {
       console.error('cancel err', err);
@@ -53,9 +80,12 @@ function Header() {
     }
   }
 
+  // ------------------ LOGOUT ------------------
   function handleLogout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+
+    window.dispatchEvent(new CustomEvent('userUpdated', { detail: null }));
     setUser(null);
     navigate('/');
   }
@@ -77,22 +107,36 @@ function Header() {
 
           {user && (
             <>
-              <div className="px-3 py-1 rounded text-sm">Hi, {user.name || user.email}</div>
+              <div className="px-3 py-1 rounded text-sm">
+                Hi, {user.name || user.email}
+              </div>
+
               <div className="px-3 py-1 rounded text-sm">
                 Status: {user.subscription === 1 ? 'Premium' : 'Free'}
               </div>
 
               {user.subscription === 0 ? (
-                <button onClick={handleUpgrade} className="ml-2 px-3 py-1 bg-yellow-500 text-black rounded">
+                <button
+                  onClick={handleUpgrade}
+                  className="ml-2 px-3 py-1 bg-yellow-500 text-black rounded"
+                >
                   Upgrade
                 </button>
               ) : (
-                <button onClick={handleCancel} className="ml-2 px-3 py-1 bg-gray-700 rounded">
+                <button
+                  onClick={handleCancel}
+                  className="ml-2 px-3 py-1 bg-gray-700 rounded"
+                >
                   Cancel
                 </button>
               )}
 
-              <button onClick={handleLogout} className="ml-2 px-3 py-1 bg-red-600 rounded">Logout</button>
+              <button
+                onClick={handleLogout}
+                className="ml-2 px-3 py-1 bg-red-600 rounded"
+              >
+                Logout
+              </button>
             </>
           )}
         </nav>
