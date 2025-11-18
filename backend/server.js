@@ -6,6 +6,8 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const showsRoutes = require('./routes/shows');
 const userRoutes = require('./routes/user');
+const paymentRoutes = require('./routes/payment');
+const subscriptionRoutes = require('./routes/subscription');
 
 const app = express();
 app.use(cors());
@@ -15,6 +17,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/shows', showsRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/subscription', subscriptionRoutes);
 
 const PORT = process.env.PORT || 4000;
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
