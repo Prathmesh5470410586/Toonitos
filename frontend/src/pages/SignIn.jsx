@@ -1,31 +1,42 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import API from '../api';
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import API from "../api";
 
-export default function SignIn(){
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [err, setErr] = useState('');
+export default function SignIn() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  async function handleSubmit(e){
+  async function handleSubmit(e) {
     e.preventDefault();
-    setErr('');
+    setErr("");
     setLoading(true);
+
     try {
-      const res = await API.post('/auth/login', { email, password });
-      const { token, user } = res.data;
+      // 1) login (get token)
+      const loginRes = await API.post("/auth/login", { email, password });
+      const { token } = loginRes.data;
 
-      // Save token + user (user includes subscription)
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      if (!token) throw new Error("No token returned from server");
 
-      // Navigate to browse
-      navigate('/browse');
+      // 2) save token
+      localStorage.setItem("token", token);
+
+      // 3) fetch fresh user profile (ensures subscription field is present)
+      const meRes = await API.get("/user/me");
+      const freshUser = meRes.data;
+
+      // 4) save user and notify same-tab listeners
+      localStorage.setItem("user", JSON.stringify(freshUser));
+      window.dispatchEvent(new CustomEvent("userUpdated", { detail: freshUser }));
+
+      // 5) navigate to browse
+      navigate("/browse");
     } catch (error) {
       console.error(error);
-      setErr(error?.response?.data?.message || 'Sign in failed');
+      setErr(error?.response?.data?.message || error.message || "Sign in failed");
     } finally {
       setLoading(false);
     }
@@ -38,19 +49,31 @@ export default function SignIn(){
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Email</label>
-          <input value={email} onChange={e=>setEmail(e.target.value)} required
-            className="w-full border px-3 py-2 rounded" type="email" />
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full border px-3 py-2 rounded"
+            type="email"
+          />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Password</label>
-          <input value={password} onChange={e=>setPassword(e.target.value)} required
-            className="w-full border px-3 py-2 rounded" type="password" />
+          <input
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full border px-3 py-2 rounded"
+            type="password"
+          />
         </div>
         <div className="flex items-center justify-between">
           <button disabled={loading} type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? "Signing in..." : "Sign In"}
           </button>
-          <Link to="/register" className="text-sm text-blue-600">Create account</Link>
+          <Link to="/register" className="text-sm text-blue-600">
+            Create account
+          </Link>
         </div>
       </form>
     </div>
