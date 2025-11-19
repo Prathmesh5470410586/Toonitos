@@ -5,8 +5,7 @@ import API from "../api";
 export default function CancelSubscriptionPage() {
   async function cancelNow() {
     try {
-      await API.post('/subscription/cancel');
-
+      await API.post('/subscription/cancel', { refund: true });
       const updatedUser = {
         ...(JSON.parse(localStorage.getItem('user')) || {}),
         subscription: 0,

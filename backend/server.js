@@ -27,3 +27,11 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
     app.listen(PORT, ()=> console.log('Server running on', PORT));
   })
   .catch(err => console.error(err));
+
+// auto subscription exipry logic 
+
+if (process.env.NODE_ENV !== 'test') {
+  const startExpireJob = require('./jobs/expireSubscriptions');
+  startExpireJob();
+}
+
