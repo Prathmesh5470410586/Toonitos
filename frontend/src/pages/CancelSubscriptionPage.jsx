@@ -5,23 +5,20 @@ import API from "../api";
 export default function CancelSubscriptionPage() {
   async function cancelNow() {
     try {
-      // Call backend cancel endpoint
-      await API.post("/subscription/cancel");
-
-      // Update local user object
+      await API.post('/subscription/cancel', { refund: true });
       const updatedUser = {
-        ...(JSON.parse(localStorage.getItem("user")) || {}),
+        ...(JSON.parse(localStorage.getItem('user')) || {}),
         subscription: 0,
         subscription_expiry: null,
       };
 
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-      window.dispatchEvent(new CustomEvent("userUpdated", { detail: updatedUser }));
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      window.dispatchEvent(new CustomEvent('userUpdated', { detail: updatedUser }));
 
-      alert("Subscription cancelled.");
+      alert('Subscription cancelled.');
     } catch (err) {
-      console.error("cancel err", err);
-      alert("Error cancelling subscription.");
+      console.error('cancel err', err);
+      alert('Error cancelling subscription.');
     }
   }
 
@@ -29,9 +26,7 @@ export default function CancelSubscriptionPage() {
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-4">Cancel Subscription</h1>
       <p className="mb-4 text-gray-300">Are you sure you want to cancel your subscription?</p>
-      <button onClick={cancelNow} className="px-4 py-2 bg-red-600 rounded">
-        Cancel Subscription
-      </button>
+      <button onClick={cancelNow} className="px-4 py-2 bg-red-600 rounded">Cancel Subscription</button>
     </div>
   );
 }
